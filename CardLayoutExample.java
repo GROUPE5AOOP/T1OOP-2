@@ -127,6 +127,6 @@ public class CardLayoutExample extends JFrame {
             frame.setVisible(true);
         });
     }
-} // <-- closes outer class
+} // 
 
 
