@@ -1,5 +1,8 @@
 # TIOOP-2
-[![Build Status](https://b8a8a576fb03.ngrok-free.app/job/test4/badge/icon)](https://b8a8a576fb03.ngrok-free.app/job/test4/)
 
-This project is a refactored version of **T1OOP-2**.  
-The main code resides in the `.java` files, while other files support the application’s platform-specific execution.
+[![Build Status](https://e785595624ee.ngrok-free.app/job/test4/badge/icon)](https://e785595624ee.ngrok-free.app/job/test4/)
+
+**TIOOP-2** is a refactored version of **T1OOP-2**.  
+
+- The main application logic is contained within the `.java` files.  
+- Supporting files help facilitate platform-specific execution and environment setup.  
