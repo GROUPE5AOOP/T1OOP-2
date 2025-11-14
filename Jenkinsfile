@@ -9,7 +9,7 @@ pipeline {
         AWS_ACCESS_KEY_ID = "${env.AWS_ACCESS_KEY_ID}"
         AWS_SECRET_ACCESS_KEY = "${env.AWS_SECRET_ACCESS_KEY}"
         KUBECONFIG = "${env.KUBECONFIG}"
-        TERRAFORM_HOME = "C:\\Tools\\Terraform"
+        TERRAFORM_HOME = "C:\\Users\\abdir\\Downloads\\terraform_1.13.5_windows_386"
         HELM_HOME = "C:\\Tools\\Helm"
         PATH = "${env.TERRAFORM_HOME};${env.HELM_HOME};${env.PATH}"
     }
