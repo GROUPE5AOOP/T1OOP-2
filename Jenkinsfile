@@ -59,17 +59,25 @@ pipeline {
             }
         }
 
-     stage('Provision Infrastructure') {
-    steps {
-        script {
-            if (params.TOOL == 'Terraform') {
-                bat '"C:\\Users\\abdir\\Downloads\\terraform_1.13.5_windows_386\\deploy_terraform.bat"'
-            } 
-            // Ansible and Helm stages remain the same
-        }
-    }
-}
-
+        stage('Provision Infrastructure') {
+            steps {
+                script {
+                    if (params.TOOL == 'Terraform') {
+                        bat """
+                        "%TERRAFORM_HOME%\\terraform.exe" -chdir=terraform init
+                        "%TERRAFORM_HOME%\\terraform.exe" -chdir=terraform plan -out=tfplan
+                        "%TERRAFORM_HOME%\\terraform.exe" -chdir=terraform apply -auto-approve tfplan
+                        """
+                    } else if (params.TOOL == 'Ansible') {
+                        bat 'wsl bash -c "cd /mnt/c/ProgramData/Jenkins/.jenkins/workspace/jj/ansible && ansible-playbook -i hosts setup.yml"'
+                    } else if (params.TOOL == 'Helm') {
+                        bat """
+                        cd helm\\myapp
+                        helm upgrade --install myapp .
+                        """
+                    }
+                }
+            }
         }
     }
 
