@@ -63,10 +63,14 @@ pipeline {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
+                        def terraformDir = "${env.WORKSPACE}\\terraform"
+                        if (!fileExists(terraformDir)) {
+                            error "❌ Terraform directory not found: ${terraformDir}"
+                        }
                         bat """
-                        "%TERRAFORM_HOME%\\terraform.exe" -chdir=terraform init
-                        "%TERRAFORM_HOME%\\terraform.exe" -chdir=terraform plan -out=tfplan
-                        "%TERRAFORM_HOME%\\terraform.exe" -chdir=terraform apply -auto-approve tfplan
+                        "%TERRAFORM_HOME%\\terraform.exe" -chdir="${terraformDir}" init
+                        "%TERRAFORM_HOME%\\terraform.exe" -chdir="${terraformDir}" plan -out=tfplan
+                        "%TERRAFORM_HOME%\\terraform.exe" -chdir="${terraformDir}" apply -auto-approve tfplan
                         """
                     } else if (params.TOOL == 'Ansible') {
                         bat 'wsl bash -c "cd /mnt/c/ProgramData/Jenkins/.jenkins/workspace/jj/ansible && ansible-playbook -i hosts setup.yml"'
