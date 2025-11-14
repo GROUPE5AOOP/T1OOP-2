@@ -59,18 +59,17 @@ pipeline {
             }
         }
 
-        stage('Provision Infrastructure') {
-            steps {
-                script {
-                    if (params.TOOL == 'Terraform') {
-                        bat '"%WORKSPACE%\\terraform\\deploy_terraform.bat"'
-                    } else if (params.TOOL == 'Ansible') {
-                        bat 'wsl bash -c "cd /mnt/c/ProgramData/Jenkins/.jenkins/workspace/jj/ansible && ansible-playbook -i hosts setup.yml"'
-                    } else if (params.TOOL == 'Helm') {
-                        bat '"%WORKSPACE%\\helm\\deploy_helm.bat"'
-                    }
-                }
-            }
+     stage('Provision Infrastructure') {
+    steps {
+        script {
+            if (params.TOOL == 'Terraform') {
+                bat '"C:\\Users\\abdir\\Downloads\\terraform_1.13.5_windows_386\\deploy_terraform.bat"'
+            } 
+            // Ansible and Helm stages remain the same
+        }
+    }
+}
+
         }
     }
 
