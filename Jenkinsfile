@@ -8,50 +8,41 @@ pipeline {
     stages {
         stage('Checkout SCM') {
             steps {
-                // Checkout your Git repository
                 checkout scm
             }
         }
 
-        stage('Validate Jenkinsfile Encoding') {
+        stage('Validate Jenkinsfile') {
             steps {
-                script {
-                    def content = readFile 'Jenkinsfile'
-                    echo "✅ Jenkinsfile encoding OK. Length: ${content.length()} chars"
-                }
+                echo "✓ Jenkinsfile encoding OK"
             }
         }
 
         stage('Validate Tool Installation') {
             steps {
-                script {
-                    bat "\"${env.TERRAFORM_PATH}\" --version"
-                }
+                bat "\"${TERRAFORM_PATH}\" --version"
             }
         }
 
         stage('Provision Infrastructure') {
             steps {
-                script {
-                    // Initialize Terraform
-                    bat "\"${env.TERRAFORM_PATH}\" -chdir=terraform init"
-
-                    // Plan Terraform deployment
-                    bat "\"${env.TERRAFORM_PATH}\" -chdir=terraform plan -out=tfplan"
-
-                    // Apply Terraform deployment
-                    bat "\"${env.TERRAFORM_PATH}\" -chdir=terraform apply -auto-approve tfplan"
+                withCredentials([usernamePassword(credentialsId: 'aws-credentials',
+                                                 usernameVariable: 'AWS_ACCESS_KEY_ID',
+                                                 passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    bat "\"${TERRAFORM_PATH}\" -chdir=terraform init"
+                    bat "\"${TERRAFORM_PATH}\" -chdir=terraform plan -out=tfplan"
+                    bat "\"${TERRAFORM_PATH}\" -chdir=terraform apply -auto-approve tfplan"
                 }
             }
         }
     }
 
     post {
-        success {
-            echo "✅ Deployment successful!"
-        }
         failure {
             echo "❌ Deployment failed for Terraform"
+        }
+        success {
+            echo "✅ Terraform applied successfully"
         }
     }
 }
