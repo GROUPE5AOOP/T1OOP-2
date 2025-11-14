@@ -2,24 +2,15 @@ pipeline {
     agent any
 
     parameters {
-        choice(name: 'TOOL', choices: ['Terraform', 'Helm'], description: 'Select the provisioning tool')
+        choice(name: 'TOOL', choices: ['Terraform', 'Ansible', 'Helm'], description: 'Select provisioning tool')
     }
 
     environment {
-        // Path to executables
+        AWS_ACCESS_KEY_ID = "${env.AWS_ACCESS_KEY_ID}"
+        AWS_SECRET_ACCESS_KEY = "${env.AWS_SECRET_ACCESS_KEY}"
+        KUBECONFIG = "${env.KUBECONFIG}"
         TERRAFORM_HOME = "C:\\Tools\\Terraform"
-        HELM_HOME      = "C:\\Tools\\Helm"
-
-        // Prepend to PATH
-        PATH = "${env.TERRAFORM_HOME};${env.HELM_HOME};${env.PATH}"
-
-        // AWS environment variables for Terraform
-        AWS_ACCESS_KEY_ID     = "YOUR_AWS_ACCESS_KEY"
-        AWS_SECRET_ACCESS_KEY = "YOUR_AWS_SECRET_KEY"
-        AWS_DEFAULT_REGION    = "us-east-1"
-
-        // Kubernetes config for Helm
-        KUBECONFIG = "C:\\Tools\\kubeconfig"
+        PATH = "${env.TERRAFORM_HOME};C:\\Tools\\Helm;%PATH%"
     }
 
     stages {
@@ -29,11 +20,13 @@ pipeline {
             }
         }
 
-        stage('Verify Tools') {
+        stage('Setup') {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
                         bat 'terraform --version'
+                    } else if (params.TOOL == 'Ansible') {
+                        bat 'wsl ansible --version'
                     } else if (params.TOOL == 'Helm') {
                         bat 'helm version'
                     }
@@ -45,17 +38,21 @@ pipeline {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
-                        bat """
+                        bat '''
                         cd terraform
                         terraform init
                         terraform plan -out=tfplan
                         terraform apply -auto-approve tfplan
-                        """
+                        '''
+                    } else if (params.TOOL == 'Ansible') {
+                        bat '''
+                        wsl cd /mnt/c/ProgramData/Jenkins/.jenkins/workspace/jj/ansible
+                        wsl ansible-playbook -i hosts setup.yml
+                        '''
                     } else if (params.TOOL == 'Helm') {
-                        bat """
-                        cd helm
-                        helm upgrade --install myapp ./myapp
-                        """
+                        bat '''
+                        helm upgrade --install myapp ./helm/myapp
+                        '''
                     }
                 }
             }
@@ -64,7 +61,7 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment succeeded using ${params.TOOL}"
+            echo "✅ Infrastructure deployed successfully using ${params.TOOL}"
         }
         failure {
             echo "❌ Deployment failed for ${params.TOOL}"
