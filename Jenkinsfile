@@ -10,7 +10,8 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = "${env.AWS_SECRET_ACCESS_KEY}"
         KUBECONFIG = "${env.KUBECONFIG}"
         TERRAFORM_HOME = "C:\\Tools\\Terraform"
-        PATH = "${env.TERRAFORM_HOME};C:\\Tools\\Helm;%PATH%"
+        HELM_HOME = "C:\\Tools\\Helm"
+        PATH = "${env.TERRAFORM_HOME};${env.HELM_HOME};${env.PATH}"
     }
 
     stages {
@@ -20,15 +21,25 @@ pipeline {
             }
         }
 
-        stage('Setup') {
+        stage('Validate Tool Installation') {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
-                        bat 'terraform --version'
-                    } else if (params.TOOL == 'Ansible') {
-                        bat 'wsl ansible --version'
+                        if (!fileExists("${env.TERRAFORM_HOME}/terraform.exe")) {
+                            error "❌ Terraform not found in ${env.TERRAFORM_HOME}"
+                        }
+                        bat '"%TERRAFORM_HOME%\\terraform.exe" --version'
                     } else if (params.TOOL == 'Helm') {
-                        bat 'helm version'
+                        if (!fileExists("${env.HELM_HOME}/helm.exe")) {
+                            error "❌ Helm not found in ${env.HELM_HOME}"
+                        }
+                        bat '"%HELM_HOME%\\helm.exe" version'
+                    } else if (params.TOOL == 'Ansible') {
+                        def status = bat(script: 'wsl ansible --version', returnStatus: true)
+                        if (status != 0) {
+                            error "❌ Ansible not installed or misconfigured in WSL"
+                        }
+                        echo "✅ Ansible detected in WSL"
                     }
                 }
             }
@@ -38,22 +49,22 @@ pipeline {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
-                        bat '''
-                        cd terraform
-                        terraform init
-                        terraform plan -out=tfplan
-                        terraform apply -auto-approve tfplan
-                        '''
+                        bat '"%WORKSPACE%\\terraform\\deploy_terraform.bat"'
                     } else if (params.TOOL == 'Ansible') {
-                        bat '''
-                        wsl cd /mnt/c/ProgramData/Jenkins/.jenkins/workspace/jj/ansible
-                        wsl ansible-playbook -i hosts setup.yml
-                        '''
+                        bat 'wsl bash -c "cd /mnt/c/ProgramData/Jenkins/.jenkins/workspace/jj/ansible && ansible-playbook -i hosts setup.yml"'
                     } else if (params.TOOL == 'Helm') {
-                        bat '''
-                        helm upgrade --install myapp ./helm/myapp
-                        '''
+                        bat '"%WORKSPACE%\\helm\\deploy_helm.bat"'
                     }
+                }
+            }
+        }
+
+        stage('Verify Jenkinsfile Encoding') {
+            steps {
+                script {
+                    // Load Jenkinsfile safely as UTF-8
+                    def content = readFile(file: 'Jenkinsfile', encoding: 'UTF-8')
+                    echo "✅ Jenkinsfile loaded successfully. Length: ${content.length()} chars"
                 }
             }
         }
