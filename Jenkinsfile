@@ -1,35 +1,26 @@
 pipeline {
     agent any
 
-    parameters {
-        choice(name: 'TOOL', choices: ['Terraform', 'Ansible', 'Helm'], description: 'Select provisioning tool')
-    }
-
-    environment {
-        AWS_ACCESS_KEY_ID = "${env.AWS_ACCESS_KEY_ID}"
-        AWS_SECRET_ACCESS_KEY = "${env.AWS_SECRET_ACCESS_KEY}"
-        KUBECONFIG = "${env.KUBECONFIG}"
-        TERRAFORM_EXE = "C:\\Users\\abdir\\Downloads\\terraform_1.13.5_windows_386\\terraform.exe"
-        PATH = "${env.TERRAFORM_EXE};C:\\Tools\\Helm;%PATH%"
-    }
-
     stages {
-        stage('Checkout Code') {
+        stage('Checkout SCM') {
             steps {
-                git branch: 'main', url: 'https://github.com/GROUPE5AOOP/T1OOP-2.git'
+                checkout scm
             }
         }
 
-        stage('Setup') {
+        stage('Validate Jenkinsfile Encoding') {
             steps {
                 script {
-                    if (params.TOOL == 'Terraform') {
-                        bat "\"${env.TERRAFORM_EXE}\" --version"
-                    } else if (params.TOOL == 'Ansible') {
-                        bat 'wsl ansible --version'
-                    } else if (params.TOOL == 'Helm') {
-                        bat 'helm version'
-                    }
+                    def content = readFile('Jenkinsfile')
+                    echo "✅ Jenkinsfile encoding OK. Length: ${content.length()} chars"
+                }
+            }
+        }
+
+        stage('Validate Tool Installation') {
+            steps {
+                script {
+                    bat '"C:\\Users\\abdir\\Downloads\\terraform_1.13.5_windows_386\\terraform.exe" --version'
                 }
             }
         }
@@ -37,22 +28,14 @@ pipeline {
         stage('Provision Infrastructure') {
             steps {
                 script {
-                    if (params.TOOL == 'Terraform') {
-                        bat """
-                        \"${env.TERRAFORM_EXE}\" -chdir=terraform init
-                        \"${env.TERRAFORM_EXE}\" -chdir=terraform plan -out=tfplan
-                        \"${env.TERRAFORM_EXE}\" -chdir=terraform apply -auto-approve tfplan
-                        """
-                    } else if (params.TOOL == 'Ansible') {
-                        bat '''
-                        wsl cd /mnt/c/ProgramData/Jenkins/.jenkins/workspace/jj/ansible
-                        wsl ansible-playbook -i hosts setup.yml
-                        '''
-                    } else if (params.TOOL == 'Helm') {
-                        bat '''
-                        helm upgrade --install myapp ./helm/myapp
-                        '''
-                    }
+                    // Initialize Terraform
+                    bat "\"C:\\Users\\abdir\\Downloads\\terraform_1.13.5_windows_386\\terraform.exe\" -chdir=%WORKSPACE%\\terraform init"
+                    
+                    // Plan Terraform deployment
+                    bat "\"C:\\Users\\abdir\\Downloads\\terraform_1.13.5_windows_386\\terraform.exe\" -chdir=%WORKSPACE%\\terraform plan -out=tfplan"
+                    
+                    // Apply Terraform deployment
+                    bat "\"C:\\Users\\abdir\\Downloads\\terraform_1.13.5_windows_386\\terraform.exe\" -chdir=%WORKSPACE%\\terraform apply -auto-approve tfplan"
                 }
             }
         }
@@ -60,10 +43,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Infrastructure deployed successfully using ${params.TOOL}"
+            echo "✅ Deployment completed successfully!"
         }
         failure {
-            echo "❌ Deployment failed for ${params.TOOL}"
+            echo "❌ Deployment failed for Terraform"
         }
     }
 }
