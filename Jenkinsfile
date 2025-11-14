@@ -15,9 +15,23 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/GROUPE5AOOP/T1OOP-2.git'
+            }
+        }
+
+        stage('Validate Jenkinsfile Encoding') {
+            steps {
+                script {
+                    try {
+                        def content = readFile(file: 'Jenkinsfile', encoding: 'UTF-8')
+                        echo "✅ Jenkinsfile encoding OK. Length: ${content.length()} chars"
+                    } catch (Exception e) {
+                        error "❌ Jenkinsfile encoding invalid. Ensure UTF-8 without BOM. Build stopped."
+                    }
+                }
             }
         }
 
@@ -55,16 +69,6 @@ pipeline {
                     } else if (params.TOOL == 'Helm') {
                         bat '"%WORKSPACE%\\helm\\deploy_helm.bat"'
                     }
-                }
-            }
-        }
-
-        stage('Verify Jenkinsfile Encoding') {
-            steps {
-                script {
-                    // Load Jenkinsfile safely as UTF-8
-                    def content = readFile(file: 'Jenkinsfile', encoding: 'UTF-8')
-                    echo "✅ Jenkinsfile loaded successfully. Length: ${content.length()} chars"
                 }
             }
         }
