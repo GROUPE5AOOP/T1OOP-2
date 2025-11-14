@@ -18,7 +18,7 @@ pipeline {
             }
         }
 
-        stage('Validate Tool Installation') {
+        stage('Validate Terraform Installation') {
             steps {
                 bat "\"${TERRAFORM_PATH}\" --version"
             }
@@ -26,13 +26,12 @@ pipeline {
 
         stage('Provision Infrastructure') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'aws-credentials',
-                                                 usernameVariable: 'AWS_ACCESS_KEY_ID',
-                                                 passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                    bat "\"${TERRAFORM_PATH}\" -chdir=terraform init"
-                    bat "\"${TERRAFORM_PATH}\" -chdir=terraform plan -out=tfplan"
-                    bat "\"${TERRAFORM_PATH}\" -chdir=terraform apply -auto-approve tfplan"
-                }
+                // No AWS credentials needed
+                echo "Running Terraform locally..."
+
+                bat "\"${TERRAFORM_PATH}\" -chdir=terraform init"
+                bat "\"${TERRAFORM_PATH}\" -chdir=terraform plan -out=tfplan"
+                bat "\"${TERRAFORM_PATH}\" -chdir=terraform apply -auto-approve tfplan"
             }
         }
     }
@@ -42,7 +41,7 @@ pipeline {
             echo "❌ Deployment failed for Terraform"
         }
         success {
-            echo "✅ Terraform applied successfully"
+            echo "✅ Terraform applied successfully (no AWS)"
         }
     }
 }
