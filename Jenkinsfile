@@ -1,23 +1,17 @@
 pipeline {
     agent any
 
-    // Parameter to choose the provisioning tool
     parameters {
         choice(name: 'TOOL', choices: ['Terraform', 'Ansible', 'Helm'], description: 'Select the provisioning tool')
     }
 
     environment {
-        // Replace these with your actual AWS keys or set them as global environment variables in Jenkins
-        AWS_ACCESS_KEY_ID = "YOUR_AWS_ACCESS_KEY_ID"
-        AWS_SECRET_ACCESS_KEY = "YOUR_AWS_SECRET_ACCESS_KEY"
-        AWS_DEFAULT_REGION = "us-east-1"
-
-        // Path to kubeconfig for Helm (optional)
-        KUBE_CONFIG = "C:\\Users\\Jenkins\\.kube\\config"
+        TERRAFORM_HOME = "C:\\Tools\\Terraform"
+        PATH = "${env.TERRAFORM_HOME};${env.PATH}" // prepend Terraform to PATH
+        KUBE_CONFIG = "C:\\Tools\\kubeconfig" // for Helm if needed
     }
 
     stages {
-
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/GROUPE5AOOP/T1OOP-2.git'
@@ -28,11 +22,11 @@ pipeline {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
-                        bat 'terraform --version'
-                    } else if (params.TOOL == 'Ansible') {
-                        bat 'ansible --version'
+                        sh 'terraform --version'
                     } else if (params.TOOL == 'Helm') {
-                        bat 'helm version'
+                        sh 'helm version'
+                    } else {
+                        echo "Ansible is not supported on Windows without WSL"
                     }
                 }
             }
@@ -42,28 +36,11 @@ pipeline {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
-                        bat '''
-                        set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
-                        set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
-                        set AWS_DEFAULT_REGION=%AWS_DEFAULT_REGION%
+                        sh '''
                         cd terraform
                         terraform init
                         terraform plan -out=tfplan
                         terraform apply -auto-approve tfplan
-                        '''
-                    } else if (params.TOOL == 'Ansible') {
-                        bat '''
-                        set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
-                        set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
-                        set AWS_DEFAULT_REGION=%AWS_DEFAULT_REGION%
-                        cd ansible
-                        ansible-playbook -i hosts setup.yml
-                        '''
-                    } else if (params.TOOL == 'Helm') {
-                        bat '''
-                        set KUBECONFIG=%KUBE_CONFIG%
-                        cd helm
-                        helm upgrade --install myapp ./myapp
                         '''
                     }
                 }
@@ -73,10 +50,10 @@ pipeline {
 
     post {
         success {
-            echo "Infrastructure deployed successfully using ${params.TOOL}"
+            echo "✅ Deployment succeeded using ${params.TOOL}"
         }
         failure {
-            echo "Deployment failed for ${params.TOOL}"
+            echo "❌ Deployment failed for ${params.TOOL}"
         }
     }
 }
