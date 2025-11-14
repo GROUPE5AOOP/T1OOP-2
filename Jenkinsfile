@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        AWS_CREDENTIALS = credentials('aws-jenkins-creds') // AWS creds in Jenkins
+        AWS_CREDENTIALS = credentials('aws-jenkins-creds') // AWS credentials in Jenkins
         KUBE_CONFIG = credentials('kubeconfig-jenkins')    // K8s kubeconfig if using Helm
     }
 
@@ -15,7 +15,7 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-repo/infrastructure.git'
+                git branch: 'main', url: 'https://github.com/GROUPE5AOOP/T1OOP-2.git'
             }
         }
 
@@ -62,10 +62,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Infrastructure deployed successfully using ${params.TOOL}"
+            echo "Infrastructure deployed successfully using ${params.TOOL}"
         }
         failure {
-            echo "❌ Deployment failed for ${params.TOOL}"
+            echo "Deployment failed for ${params.TOOL}"
         }
     }
 }
