@@ -9,51 +9,26 @@ pipeline {
         AWS_ACCESS_KEY_ID = "${env.AWS_ACCESS_KEY_ID}"
         AWS_SECRET_ACCESS_KEY = "${env.AWS_SECRET_ACCESS_KEY}"
         KUBECONFIG = "${env.KUBECONFIG}"
-        TERRAFORM_HOME = "C:\\Users\\abdir\\Downloads\\terraform_1.13.5_windows_386"
-        HELM_HOME = "C:\\Tools\\Helm"
-        PATH = "${env.TERRAFORM_HOME};${env.HELM_HOME};${env.PATH}"
+        TERRAFORM_EXE = "C:\\Users\\abdir\\Downloads\\terraform_1.13.5_windows_386\\terraform.exe"
+        PATH = "${env.TERRAFORM_EXE};C:\\Tools\\Helm;%PATH%"
     }
 
     stages {
-
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/GROUPE5AOOP/T1OOP-2.git'
             }
         }
 
-        stage('Validate Jenkinsfile Encoding') {
-            steps {
-                script {
-                    try {
-                        def content = readFile(file: 'Jenkinsfile', encoding: 'UTF-8')
-                        echo "✅ Jenkinsfile encoding OK. Length: ${content.length()} chars"
-                    } catch (Exception e) {
-                        error "❌ Jenkinsfile encoding invalid. Build stopped."
-                    }
-                }
-            }
-        }
-
-        stage('Validate Tool Installation') {
+        stage('Setup') {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
-                        if (!fileExists("${env.TERRAFORM_HOME}/terraform.exe")) {
-                            error "❌ Terraform not found in ${env.TERRAFORM_HOME}"
-                        }
-                        bat '"%TERRAFORM_HOME%\\terraform.exe" --version'
-                    } else if (params.TOOL == 'Helm') {
-                        if (!fileExists("${env.HELM_HOME}/helm.exe")) {
-                            error "❌ Helm not found in ${env.HELM_HOME}"
-                        }
-                        bat '"%HELM_HOME%\\helm.exe" version'
+                        bat "\"${env.TERRAFORM_EXE}\" --version"
                     } else if (params.TOOL == 'Ansible') {
-                        def status = bat(script: 'wsl ansible --version', returnStatus: true)
-                        if (status != 0) {
-                            error "❌ Ansible not installed or misconfigured in WSL"
-                        }
-                        echo "✅ Ansible detected in WSL"
+                        bat 'wsl ansible --version'
+                    } else if (params.TOOL == 'Helm') {
+                        bat 'helm version'
                     }
                 }
             }
@@ -63,22 +38,20 @@ pipeline {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
-                        def terraformDir = "C:\\Users\\abdir\\Downloads\\terraform_1.13.5_windows_386"
-                        if (!fileExists(terraformDir)) {
-                            error "❌ Terraform directory not found: ${terraformDir}"
-                        }
                         bat """
-                        "%TERRAFORM_HOME%\\terraform.exe" -chdir="${terraformDir}" init
-                        "%TERRAFORM_HOME%\\terraform.exe" -chdir="${terraformDir}" plan -out=tfplan
-                        "%TERRAFORM_HOME%\\terraform.exe" -chdir="${terraformDir}" apply -auto-approve tfplan
+                        \"${env.TERRAFORM_EXE}\" -chdir=terraform init
+                        \"${env.TERRAFORM_EXE}\" -chdir=terraform plan -out=tfplan
+                        \"${env.TERRAFORM_EXE}\" -chdir=terraform apply -auto-approve tfplan
                         """
                     } else if (params.TOOL == 'Ansible') {
-                        bat 'wsl bash -c "cd /mnt/c/ProgramData/Jenkins/.jenkins/workspace/jj/ansible && ansible-playbook -i hosts setup.yml"'
+                        bat '''
+                        wsl cd /mnt/c/ProgramData/Jenkins/.jenkins/workspace/jj/ansible
+                        wsl ansible-playbook -i hosts setup.yml
+                        '''
                     } else if (params.TOOL == 'Helm') {
-                        bat """
-                        cd helm\\myapp
-                        helm upgrade --install myapp .
-                        """
+                        bat '''
+                        helm upgrade --install myapp ./helm/myapp
+                        '''
                     }
                 }
             }
