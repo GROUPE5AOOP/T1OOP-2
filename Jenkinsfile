@@ -2,13 +2,24 @@ pipeline {
     agent any
 
     parameters {
-        choice(name: 'TOOL', choices: ['Terraform', 'Ansible', 'Helm'], description: 'Select the provisioning tool')
+        choice(name: 'TOOL', choices: ['Terraform', 'Helm'], description: 'Select the provisioning tool')
     }
 
     environment {
+        // Path to executables
         TERRAFORM_HOME = "C:\\Tools\\Terraform"
-        PATH = "${env.TERRAFORM_HOME};${env.PATH}" // prepend Terraform to PATH
-        KUBE_CONFIG = "C:\\Tools\\kubeconfig" // for Helm if needed
+        HELM_HOME      = "C:\\Tools\\Helm"
+
+        // Prepend to PATH
+        PATH = "${env.TERRAFORM_HOME};${env.HELM_HOME};${env.PATH}"
+
+        // AWS environment variables for Terraform
+        AWS_ACCESS_KEY_ID     = "YOUR_AWS_ACCESS_KEY"
+        AWS_SECRET_ACCESS_KEY = "YOUR_AWS_SECRET_KEY"
+        AWS_DEFAULT_REGION    = "us-east-1"
+
+        // Kubernetes config for Helm
+        KUBECONFIG = "C:\\Tools\\kubeconfig"
     }
 
     stages {
@@ -18,15 +29,13 @@ pipeline {
             }
         }
 
-        stage('Setup') {
+        stage('Verify Tools') {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
-                        sh 'terraform --version'
+                        bat 'terraform --version'
                     } else if (params.TOOL == 'Helm') {
-                        sh 'helm version'
-                    } else {
-                        echo "Ansible is not supported on Windows without WSL"
+                        bat 'helm version'
                     }
                 }
             }
@@ -36,12 +45,17 @@ pipeline {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
-                        sh '''
+                        bat """
                         cd terraform
                         terraform init
                         terraform plan -out=tfplan
                         terraform apply -auto-approve tfplan
-                        '''
+                        """
+                    } else if (params.TOOL == 'Helm') {
+                        bat """
+                        cd helm
+                        helm upgrade --install myapp ./myapp
+                        """
                     }
                 }
             }
