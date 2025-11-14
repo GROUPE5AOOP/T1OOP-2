@@ -1,8 +1,15 @@
-provider "aws" {
-  region = "us-east-1"
+terraform {
+  required_providers {
+    local = {
+      source = "hashicorp/local"
+      version = "2.4.0"
+    }
+  }
 }
 
-resource "aws_s3_bucket" "example" {
-  bucket = "my-jenkins-bucket"
-  acl    = "private"
+provider "local" {}
+
+resource "local_file" "example" {
+  filename = "hello.txt"
+  content  = "Hello from Terraform running in Jenkins!"
 }
