@@ -29,7 +29,7 @@ pipeline {
                         def content = readFile(file: 'Jenkinsfile', encoding: 'UTF-8')
                         echo "✅ Jenkinsfile encoding OK. Length: ${content.length()} chars"
                     } catch (Exception e) {
-                        error "❌ Jenkinsfile encoding invalid. Ensure UTF-8 without BOM. Build stopped."
+                        error "❌ Jenkinsfile encoding invalid. Build stopped."
                     }
                 }
             }
@@ -63,7 +63,7 @@ pipeline {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
-                        def terraformDir = "${env.WORKSPACE}\\terraform"
+                        def terraformDir = "C:\\Users\\abdir\\Downloads\\terraform_1.13.5_windows_386"
                         if (!fileExists(terraformDir)) {
                             error "❌ Terraform directory not found: ${terraformDir}"
                         }
