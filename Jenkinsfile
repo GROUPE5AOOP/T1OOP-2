@@ -7,8 +7,11 @@ pipeline {
     }
 
     environment {
-        AWS_CREDENTIALS = credentials('aws-jenkins-creds') // AWS credentials in Jenkins
-        KUBE_CONFIG = credentials('kubeconfig-jenkins')    // K8s kubeconfig if using Helm
+        // Replace these with your AWS Access Key and Secret Key
+        AWS_ACCESS_KEY_ID = "YOUR_AWS_ACCESS_KEY_ID"
+        AWS_SECRET_ACCESS_KEY = "YOUR_AWS_SECRET_ACCESS_KEY"
+        // Optional AWS region
+        AWS_DEFAULT_REGION = "us-east-1"
     }
 
     stages {
@@ -23,11 +26,11 @@ pipeline {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
-                        sh 'terraform --version'
+                        bat 'terraform --version'
                     } else if (params.TOOL == 'Ansible') {
-                        sh 'ansible --version'
+                        bat 'ansible --version'
                     } else if (params.TOOL == 'Helm') {
-                        sh 'helm version'
+                        bat 'helm version'
                     }
                 }
             }
@@ -37,20 +40,20 @@ pipeline {
             steps {
                 script {
                     if (params.TOOL == 'Terraform') {
-                        sh '''
+                        bat '''
                         cd terraform
                         terraform init
                         terraform plan -out=tfplan
                         terraform apply -auto-approve tfplan
                         '''
                     } else if (params.TOOL == 'Ansible') {
-                        sh '''
+                        bat '''
                         cd ansible
                         ansible-playbook -i hosts setup.yml
                         '''
                     } else if (params.TOOL == 'Helm') {
-                        sh '''
-                        export KUBECONFIG=$KUBE_CONFIG
+                        bat '''
+                        set KUBECONFIG=%KUBE_CONFIG%
                         cd helm
                         helm upgrade --install myapp ./myapp
                         '''
@@ -62,10 +65,10 @@ pipeline {
 
     post {
         success {
-            echo "Infrastructure deployed successfully using ${params.TOOL}"
+            echo "✅ Infrastructure deployed successfully using ${params.TOOL}"
         }
         failure {
-            echo "Deployment failed for ${params.TOOL}"
+            echo "❌ Deployment failed for ${params.TOOL}"
         }
     }
 }
