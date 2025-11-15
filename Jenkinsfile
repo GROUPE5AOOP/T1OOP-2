@@ -26,12 +26,20 @@ pipeline {
 
         stage('Provision Infrastructure') {
             steps {
-                // No AWS credentials needed
                 echo "Running Terraform locally..."
 
                 bat "\"${TERRAFORM_PATH}\" -chdir=terraform init"
                 bat "\"${TERRAFORM_PATH}\" -chdir=terraform plan -out=tfplan"
                 bat "\"${TERRAFORM_PATH}\" -chdir=terraform apply -auto-approve tfplan"
+            }
+        }
+
+        stage('Show Terraform Output Files') {
+            steps {
+                echo "📄 Printing generated files from Terraform..."
+                bat "type terraform\\file1.txt"
+                bat "type terraform\\file2.txt"
+                bat "type terraform\\file3.txt"
             }
         }
     }
