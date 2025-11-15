@@ -50,6 +50,15 @@ pipeline {
         }
         success {
             echo "✅ Terraform applied successfully (no AWS)"
+        stage('Terraform Output') {
+    steps {
+        script {
+            writeFile file: "terraform-report.txt", text: sh(script: "${TERRAFORM_PATH} -chdir=terraform plan", returnStdout: true)
+        }
+        archiveArtifacts artifacts: 'terraform-report.txt', fingerprint: true
+    }
+}
+    
         }
     }
 }
